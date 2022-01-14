@@ -1,0 +1,11 @@
+stm32f769i_disco_fw/.settings/language.settings.xml
+stm32f769i_disco_fw/Debug/
+stm32f769i_disco_fw/src/ap/TouchGFX/build/
+stm32f769i_disco_mx/.settings/language.settings.xml
+stm32f769i_disco_mx/Debug/
+stm32f769i_disco_boot/.settings/language.settings.xml
+stm32f769i_disco_boot/Debug/
+stm32cli/.settings/language.settings.xml
+stm32cli/.settings/org.eclipse.cdt.managedbuilder.core.prefs
+stm32cli/Debug/
+/.metadata/
