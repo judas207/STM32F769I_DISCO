@@ -245,7 +245,7 @@ bool cliUpdate(cli_t *p_cli, uint8_t rx_data)
   {
     switch(rx_data)
     {
-      // �뿏�꽣
+      // ENTER
       //
       case CLI_KEY_ENTER:
         if (line->count > 0)
@@ -287,7 +287,7 @@ bool cliUpdate(cli_t *p_cli, uint8_t rx_data)
         break;
 
 
-      // 諛깆뒪�럹�씠�뒪
+      // BACK SPACE
       //
       case CLI_KEY_BACK:
         if (line->count > 0 && line->cursor > 0)

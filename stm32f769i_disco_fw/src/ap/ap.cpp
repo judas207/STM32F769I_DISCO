@@ -18,17 +18,13 @@ void cliBoot(cli_args_t *args);
 
 void apInit(void)
 {
-#if 0
-  if (buttonGetPressed(_DEF_BUTTON1) == true)
-  {
-    usbBegin(USB_CDC_MODE);
-  }
-  else if (sdIsDetected() == true)
-  {
+#if 1
+  //if (sdIsDetected() == true)
+  //{
     usbBegin(USB_MSC_MODE);
-  }
+  //}
 #else
-  usbBegin(USB_CDC_MODE);
+  usbBegin(USB_CDC_MODE);  // for auto boot_loader
 #endif
 
 

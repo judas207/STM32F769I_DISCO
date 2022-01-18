@@ -70,6 +70,8 @@
 #define _DEF_UART_ESP_BOOT          _DEF_UART3
 #define _DEF_UART_ESP_UART          _DEF_UART4
 
+#define _DEF_BUTTON_USER            _DEF_BUTTON1
+
 
 #define _PIN_GPIO_SDCARD_DETECT     0
 

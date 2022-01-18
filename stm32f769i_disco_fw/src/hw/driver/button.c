@@ -24,7 +24,7 @@ typedef struct
 
 button_tbl_t button_tbl[BUTTON_MAX_CH] =
     {
-        {GPIOA, GPIO_PIN_0, GPIO_PIN_SET},
+        {GPIOA, GPIO_PIN_0, GPIO_PIN_SET},  // 0 : user
     };
 
 
@@ -76,6 +76,64 @@ bool buttonGetPressed(uint8_t ch)
   return ret;
 }
 
+void buttonObjCreate(button_obj_t *p_obj, uint8_t ch, uint32_t repeat_time)
+{
+  p_obj->ch = ch;
+  p_obj->state = 0;
+  p_obj->pre_time = millis();
+  p_obj->repeat_time = repeat_time;
+}
+
+bool buttonObjGetClicked(button_obj_t *p_obj, uint32_t pressed_time)
+{
+  bool ret = false;
+
+
+  switch(p_obj->state)
+  {
+    case 0:
+      if (buttonGetPressed(p_obj->ch) == true)
+      {
+        p_obj->state = 1;
+        p_obj->pre_time = millis();
+      }
+      break;
+
+    case 1:
+      if (buttonGetPressed(p_obj->ch) == true)
+      {
+        if (millis()-p_obj->pre_time >= pressed_time)
+        {
+          ret = true; // 버튼 클릭됨
+          p_obj->state = 2;
+          p_obj->pre_time = millis();
+        }
+      }
+      else
+      {
+        p_obj->state = 0;
+      }
+      break;
+
+    case 2:
+      if (buttonGetPressed(p_obj->ch) == true)
+      {
+        if (millis()-p_obj->pre_time >= p_obj->repeat_time)
+        {
+          p_obj->state = 1;
+          p_obj->pre_time = millis();
+        }
+      }
+      else
+      {
+        p_obj->state = 0;
+      }
+      break;
+  }
+
+  return ret;
+}
+
 
 
 #ifdef _USE_HW_CLI
@@ -84,16 +142,38 @@ void cliButton(cli_args_t *args)
   bool ret = false;
 
 
-  if (args->argc == 1 && args->isStr(0, "show") == true)
+  if (args->argc == 2 && args->isStr(0, "show") == true)
   {
+    uint8_t ch;
+
+    ch = (uint8_t)args->getData(1);
+
     while(cliKeepLoop())
     {
-      for (int i=0; i<BUTTON_MAX_CH; i++)
+      cliPrintf("%d\n", buttonGetPressed(ch));
+      delay(500);
+    }
+
+    ret = true;
+  }
+
+  if (args->argc == 2 && args->isStr(0, "read") == true)
+  {
+    button_obj_t btn_push;
+    uint32_t btn_cnt = 0;
+    uint8_t ch;
+
+    ch = (uint8_t)args->getData(1);
+
+    buttonObjCreate(&btn_push, ch, 1000);
+
+    while(cliKeepLoop())
+    {
+      if (buttonObjGetClicked(&btn_push, 100) == true)
       {
-        cliPrintf("%d", buttonGetPressed(i));
+        btn_cnt++;
+        cliPrintf("button read %dch : %d\n", ch, btn_cnt);
       }
-      cliPrintf("\n");
-      delay(100);
     }
 
     ret = true;
@@ -102,7 +182,8 @@ void cliButton(cli_args_t *args)
 
   if (ret != true)
   {
-    cliPrintf("button show\n");
+    cliPrintf("button show ch[0~%d]\n", BUTTON_MAX_CH-1);
+    cliPrintf("button read ch[0~%d]\n", BUTTON_MAX_CH-1);
   }
 }
 #endif
