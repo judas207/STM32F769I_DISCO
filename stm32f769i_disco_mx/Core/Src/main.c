@@ -26,6 +26,7 @@
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
+#include "fmc.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -97,6 +98,7 @@ int main(void)
   MX_USB_OTG_HS_PCD_Init();
   MX_QUADSPI_Init();
   MX_RTC_Init();
+  MX_FMC_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
