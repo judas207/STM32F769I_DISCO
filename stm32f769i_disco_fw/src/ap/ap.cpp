@@ -18,7 +18,7 @@ void cliBoot(cli_args_t *args);
 
 void apInit(void)
 {
-#if 1
+#if 0
   //if (sdIsDetected() == true)
   //{
     usbBegin(USB_MSC_MODE);

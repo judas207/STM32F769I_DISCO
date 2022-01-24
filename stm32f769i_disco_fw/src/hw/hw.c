@@ -59,6 +59,7 @@ bool hwInit(void)
 
   rtcInit();
 
+  sdramInit();
   qspiInit();
 
   flashInit();

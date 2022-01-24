@@ -44,7 +44,7 @@ bool resetInit(void)
     reset_status = _DEF_RESET_PIN;
   }
 
-#if 1
+#if 0
   // 만약 Reset 핀이 눌렸다면
   //
   if (RCC->CSR & (1<<26))

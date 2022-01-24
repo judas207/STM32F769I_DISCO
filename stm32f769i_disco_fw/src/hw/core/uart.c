@@ -336,25 +336,25 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     PC7     ------> USART6_RX
     PC6     ------> USART6_TX
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_6;
-    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Pin       = GPIO_PIN_7|GPIO_PIN_6;
+    GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull      = GPIO_NOPULL;
+    GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_LOW;
     GPIO_InitStruct.Alternate = GPIO_AF8_USART6;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     /* USART6 DMA Init */
     /* USART6_RX Init */
-    hdma_usart6_rx.Instance = DMA2_Stream1;
-    hdma_usart6_rx.Init.Channel = DMA_CHANNEL_5;
-    hdma_usart6_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
-    hdma_usart6_rx.Init.PeriphInc = DMA_PINC_DISABLE;
-    hdma_usart6_rx.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_usart6_rx.Instance                 = DMA2_Stream1;
+    hdma_usart6_rx.Init.Channel             = DMA_CHANNEL_5;
+    hdma_usart6_rx.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+    hdma_usart6_rx.Init.PeriphInc           = DMA_PINC_DISABLE;
+    hdma_usart6_rx.Init.MemInc              = DMA_MINC_ENABLE;
     hdma_usart6_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
-    hdma_usart6_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
-    hdma_usart6_rx.Init.Mode = DMA_CIRCULAR;
-    hdma_usart6_rx.Init.Priority = DMA_PRIORITY_LOW;
-    hdma_usart6_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    hdma_usart6_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+    hdma_usart6_rx.Init.Mode                = DMA_CIRCULAR;
+    hdma_usart6_rx.Init.Priority            = DMA_PRIORITY_LOW;
+    hdma_usart6_rx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_usart6_rx) != HAL_OK)
     {
       Error_Handler();

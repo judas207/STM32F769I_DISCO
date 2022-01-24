@@ -29,6 +29,7 @@
 #include "fatfs.h"
 #include "qspi.h"
 #include "flash.h"
+#include "sdram.h"
 #include "rtc.h"
 #include "reset.h"
 

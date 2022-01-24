@@ -14,7 +14,7 @@
 
 
 
-#ifdef _USE_HW_SD
+#ifdef _USE_HW_SDRAM
 
 
 #define SDRAM_OK         ((uint8_t)0x00)
@@ -142,16 +142,25 @@ bool sdramTest(void)
 
 
 /* #define SDRAM_MEMORY_WIDTH            FMC_SDRAM_MEM_BUS_WIDTH_8  */
-#define SDRAM_MEMORY_WIDTH            FMC_SDRAM_MEM_BUS_WIDTH_16
-/* #define SDRAM_MEMORY_WIDTH               FMC_SDRAM_MEM_BUS_WIDTH_32 */
+/* #define SDRAM_MEMORY_WIDTH            FMC_SDRAM_MEM_BUS_WIDTH_16 */
+#define SDRAM_MEMORY_WIDTH            FMC_SDRAM_MEM_BUS_WIDTH_32
 
 #define SDCLOCK_PERIOD                   FMC_SDRAM_CLOCK_PERIOD_2
-//#define SDCLOCK_PERIOD                   FMC_SDRAM_CLOCK_PERIOD_3
+/* #define SDCLOCK_PERIOD                   FMC_SDRAM_CLOCK_PERIOD_3 */
 
-#define REFRESH_COUNT                    ((uint32_t)1539)   /* SDRAM refresh counter (100Mhz SD clock) */
+#define REFRESH_COUNT                    ((uint32_t)0x0603)   /* SDRAM refresh counter (100Mhz SD clock) */
 
 #define SDRAM_TIMEOUT                    ((uint32_t)0xFFFF)
 
+#if 0
+/* DMA definitions for SDRAM DMA transfer */
+#define __DMAx_CLK_ENABLE                 __HAL_RCC_DMA2_CLK_ENABLE
+#define __DMAx_CLK_DISABLE                __HAL_RCC_DMA2_CLK_DISABLE
+#define SDRAM_DMAx_CHANNEL                DMA_CHANNEL_0
+#define SDRAM_DMAx_STREAM                 DMA2_Stream0
+#define SDRAM_DMAx_IRQn                   DMA2_Stream0_IRQn
+#define BSP_SDRAM_DMA_IRQHandler          DMA2_Stream0_IRQHandler
+#endif
 
 
 /**
@@ -180,24 +189,23 @@ static FMC_SDRAM_CommandTypeDef Command;
 
 uint8_t BSP_SDRAM_Init(void)
 {
-  static uint8_t sdramstatus = SDRAM_OK;
+  static uint8_t sdramstatus = SDRAM_ERROR;
   /* SDRAM device configuration */
   sdramHandle.Instance = FMC_SDRAM_DEVICE;
 
-  /* Timing configuration for 120Mhz/8.33ns as SDRAM clock frequency*/
-
-  Timing.LoadToActiveDelay    = 2;  // 2*tCK
-  Timing.ExitSelfRefreshDelay = 9;  // 72ns / 8.33ns = 9
-  Timing.SelfRefreshTime      = 6;  // 42ns / 8.33ns = 6
-  Timing.RowCycleDelay        = 8;  // 60ns / 8.33ns = 8
-  Timing.WriteRecoveryTime    = 2;  // 2*tCK
-  Timing.RPDelay              = 2;  // 15ns / 8.33ns = 3
-  Timing.RCDDelay             = 2;  // 15ns / 8.33ns = 3;
+  /* Timing configuration for 100Mhz(t=1/f 10ns) as SDRAM clock frequency (System clock is up to 200Mhz) */
+  Timing.LoadToActiveDelay    = 2;  // tMRD  2*tCK
+  Timing.ExitSelfRefreshDelay = 7;  // tXSR  70ns / 10ns = 7ns
+  Timing.SelfRefreshTime      = 4;  // tRAS  42ns / 10ns = 4.2ns
+  Timing.RowCycleDelay        = 7;  // tRC   70ns / 10ns = 7ns
+  Timing.WriteRecoveryTime    = 2;  // tWR   14ns / 10ns = 1.4ns ??
+  Timing.RPDelay              = 2;  // tRP   20ns / 10ns = 2ns
+  Timing.RCDDelay             = 3;  // tCD   20ns / 10ns = 2ns ??
 
 
   sdramHandle.Init.SDBank             = FMC_SDRAM_BANK1;
-  sdramHandle.Init.ColumnBitsNumber   = FMC_SDRAM_COLUMN_BITS_NUM_9;
-  sdramHandle.Init.RowBitsNumber      = FMC_SDRAM_ROW_BITS_NUM_13;
+  sdramHandle.Init.ColumnBitsNumber   = FMC_SDRAM_COLUMN_BITS_NUM_8;
+  sdramHandle.Init.RowBitsNumber      = FMC_SDRAM_ROW_BITS_NUM_12;
   sdramHandle.Init.MemoryDataWidth    = SDRAM_MEMORY_WIDTH;
   sdramHandle.Init.InternalBankNumber = FMC_SDRAM_INTERN_BANKS_NUM_4;
   sdramHandle.Init.CASLatency         = FMC_SDRAM_CAS_LATENCY_3;
@@ -216,9 +224,11 @@ uint8_t BSP_SDRAM_Init(void)
   }
   else
   {
-    /* SDRAM initialization sequence */
-    BSP_SDRAM_Initialization_sequence(REFRESH_COUNT);
+    sdramstatus = SDRAM_OK;
   }
+
+  /* SDRAM initialization sequence */
+  BSP_SDRAM_Initialization_sequence(REFRESH_COUNT);
 
   return sdramstatus;
 }
@@ -229,7 +239,7 @@ uint8_t BSP_SDRAM_Init(void)
   */
 uint8_t BSP_SDRAM_DeInit(void)
 {
-  static uint8_t sdramstatus = SDRAM_OK;
+  static uint8_t sdramstatus = SDRAM_ERROR;
   /* SDRAM device de-initialization */
   sdramHandle.Instance = FMC_SDRAM_DEVICE;
 
@@ -239,9 +249,11 @@ uint8_t BSP_SDRAM_DeInit(void)
   }
   else
   {
-    /* SDRAM controller de-initialization */
-    BSP_SDRAM_MspDeInit(&sdramHandle, NULL);
+    sdramstatus = SDRAM_OK;
   }
+
+  /* SDRAM controller de-initialization */
+  BSP_SDRAM_MspDeInit(&sdramHandle, NULL);
 
   return sdramstatus;
 }
@@ -308,6 +320,82 @@ void BSP_SDRAM_Initialization_sequence(uint32_t RefreshCount)
 
 
 /**
+  * @brief  Reads an amount of data from the SDRAM memory in polling mode.
+  * @param  uwStartAddress: Read start address
+  * @param  pData: Pointer to data to be read
+  * @param  uwDataSize: Size of read data from the memory
+  * @retval SDRAM status
+  */
+uint8_t BSP_SDRAM_ReadData(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize)
+{
+  if(HAL_SDRAM_Read_32b(&sdramHandle, (uint32_t *)uwStartAddress, pData, uwDataSize) != HAL_OK)
+  {
+    return SDRAM_ERROR;
+  }
+  else
+  {
+    return SDRAM_OK;
+  }
+}
+
+/**
+  * @brief  Reads an amount of data from the SDRAM memory in DMA mode.
+  * @param  uwStartAddress: Read start address
+  * @param  pData: Pointer to data to be read
+  * @param  uwDataSize: Size of read data from the memory
+  * @retval SDRAM status
+  */
+uint8_t BSP_SDRAM_ReadData_DMA(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize)
+{
+  if(HAL_SDRAM_Read_DMA(&sdramHandle, (uint32_t *)uwStartAddress, pData, uwDataSize) != HAL_OK)
+  {
+    return SDRAM_ERROR;
+  }
+  else
+  {
+    return SDRAM_OK;
+  }
+}
+
+/**
+  * @brief  Writes an amount of data to the SDRAM memory in polling mode.
+  * @param  uwStartAddress: Write start address
+  * @param  pData: Pointer to data to be written
+  * @param  uwDataSize: Size of written data from the memory
+  * @retval SDRAM status
+  */
+uint8_t BSP_SDRAM_WriteData(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize)
+{
+  if(HAL_SDRAM_Write_32b(&sdramHandle, (uint32_t *)uwStartAddress, pData, uwDataSize) != HAL_OK)
+  {
+    return SDRAM_ERROR;
+  }
+  else
+  {
+    return SDRAM_OK;
+  }
+}
+
+/**
+  * @brief  Writes an amount of data to the SDRAM memory in DMA mode.
+  * @param  uwStartAddress: Write start address
+  * @param  pData: Pointer to data to be written
+  * @param  uwDataSize: Size of written data from the memory
+  * @retval SDRAM status
+  */
+uint8_t BSP_SDRAM_WriteData_DMA(uint32_t uwStartAddress, uint32_t *pData, uint32_t uwDataSize)
+{
+  if(HAL_SDRAM_Write_DMA(&sdramHandle, (uint32_t *)uwStartAddress, pData, uwDataSize) != HAL_OK)
+  {
+    return SDRAM_ERROR;
+  }
+  else
+  {
+    return SDRAM_OK;
+  }
+}
+
+/**
   * @brief  Sends command to the SDRAM bank.
   * @param  SdramCmd: Pointer to SDRAM command structure
   * @retval SDRAM status
@@ -332,122 +420,157 @@ uint8_t BSP_SDRAM_Sendcmd(FMC_SDRAM_CommandTypeDef *SdramCmd)
   */
 __weak void BSP_SDRAM_MspInit(SDRAM_HandleTypeDef  *hsdram, void *Params)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  //static DMA_HandleTypeDef dma_handle;
+  GPIO_InitTypeDef gpio_init_structure;
 
-
-  __HAL_RCC_GPIOE_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOG_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
-  __HAL_RCC_GPIOI_CLK_ENABLE();
-  __HAL_RCC_GPIOF_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-
-
-  /* Peripheral clock enable */
+  /* Enable FMC clock */
   __HAL_RCC_FMC_CLK_ENABLE();
+
+  /* Enable chosen DMAx clock */
+  //__DMAx_CLK_ENABLE();
+
+  /* Enable GPIOs clock */
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOI_CLK_ENABLE();
+
 
   /** FMC GPIO Configuration
   PE1   ------> FMC_NBL1
   PE0   ------> FMC_NBL0
-  PG15   ------> FMC_SDNCAS
+  PG15  ------> FMC_SDNCAS
   PD0   ------> FMC_D2
+  PI4   ------> FMC_NBL2
   PD1   ------> FMC_D3
-  PG8   ------> FMC_SDCLK
-  PF2   ------> FMC_A2
-  PF1   ------> FMC_A1
+  PI3   ------> FMC_D27
+  PI2   ------> FMC_D26
   PF0   ------> FMC_A0
-  PG5   ------> FMC_BA1
+  PI5   ------> FMC_NBL3
+  PI7   ------> FMC_D29
+  PI10  ------> FMC_D31
+  PI6   ------> FMC_D28
+  PH15  ------> FMC_D23
+  PI1   ------> FMC_D25
+  PF1   ------> FMC_A1
+  PI9   ------> FMC_D30
+  PH13  ------> FMC_D21
+  PH14  ------> FMC_D22
+  PI0   ------> FMC_D24
+  PF2   ------> FMC_A2
   PF3   ------> FMC_A3
-  PG4   ------> FMC_BA0
-  PG2   ------> FMC_A12
-  PF5   ------> FMC_A5
+  PG8   ------> FMC_SDCLK
   PF4   ------> FMC_A4
-  PC2   ------> FMC_SDNE0
-  PC3   ------> FMC_SDCKE0
-  PE10   ------> FMC_D7
   PH5   ------> FMC_SDNWE
-  PF13   ------> FMC_A7
-  PF14   ------> FMC_A8
-  PE9   ------> FMC_D6
-  PE11   ------> FMC_D8
-  PD15   ------> FMC_D1
-  PD14   ------> FMC_D0
-  PF12   ------> FMC_A6
-  PF15   ------> FMC_A9
-  PE12   ------> FMC_D9
-  PE15   ------> FMC_D12
-  PF11   ------> FMC_SDNRAS
+  PH3   ------> FMC_SDNE0
+  PF5   ------> FMC_A5
+  PH2   ------> FMC_SDCKE0
+  PD15  ------> FMC_D1
+  PD10  ------> FMC_D15
+  PD14  ------> FMC_D0
+  PD9   ------> FMC_D14
+  PD8   ------> FMC_D13
+  PF12  ------> FMC_A6
+  PG1   ------> FMC_A11
+  PF15  ------> FMC_A9
+  PG2   ------> FMC_A12
+  PH12  ------> FMC_D20
+  PF13  ------> FMC_A7
   PG0   ------> FMC_A10
   PE8   ------> FMC_D5
-  PE13   ------> FMC_D10
-  PD10   ------> FMC_D15
-  PD9   ------> FMC_D14
-  PG1   ------> FMC_A11
+  PG5   ------> FMC_BA1
+  PG4   ------> FMC_BA0
+  PH9   ------> FMC_D17
+  PH11  ------> FMC_D19
+  PF14  ------> FMC_A8
+  PF11  ------> FMC_SDNRAS
+  PE9   ------> FMC_D6
+  PE11  ------> FMC_D8
+  PE14  ------> FMC_D11
+  PH8   ------> FMC_D16
+  PH10  ------> FMC_D18
   PE7   ------> FMC_D4
-  PE14   ------> FMC_D11
-  PD8   ------> FMC_D13
+  PE10  ------> FMC_D7
+  PE12  ------> FMC_D9
+  PE15  ------> FMC_D12
+  PE13  ------> FMC_D10
   */
   /* GPIO_InitStruct */
-  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_0|GPIO_PIN_10|GPIO_PIN_9
-                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15|GPIO_PIN_8
-                          |GPIO_PIN_13|GPIO_PIN_7|GPIO_PIN_14;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
+  /* Common GPIO configuration */
+  gpio_init_structure.Mode      = GPIO_MODE_AF_PP;
+  gpio_init_structure.Pull      = GPIO_PULLUP;
+  gpio_init_structure.Speed     = GPIO_SPEED_HIGH;
+  gpio_init_structure.Alternate = GPIO_AF12_FMC;
 
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  /* GPIOD configuration */
+  gpio_init_structure.Pin   = GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_8  | GPIO_PIN_9  | GPIO_PIN_10 |
+                              GPIO_PIN_14 | GPIO_PIN_15;
 
-  /* GPIO_InitStruct */
-  GPIO_InitStruct.Pin = GPIO_PIN_15|GPIO_PIN_8|GPIO_PIN_5|GPIO_PIN_4
-                          |GPIO_PIN_2|GPIO_PIN_0|GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
 
-  HAL_GPIO_Init(GPIOG, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOD, &gpio_init_structure);
 
-  /* GPIO_InitStruct */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_15|GPIO_PIN_14
-                          |GPIO_PIN_10|GPIO_PIN_9|GPIO_PIN_8;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
+  /* GPIOE configuration */
+  gpio_init_structure.Pin   = GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_7  | GPIO_PIN_8  | GPIO_PIN_9  |
+                              GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
+                              GPIO_PIN_15;
 
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOE, &gpio_init_structure);
 
-  /* GPIO_InitStruct */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_1|GPIO_PIN_0|GPIO_PIN_3
-                          |GPIO_PIN_5|GPIO_PIN_4|GPIO_PIN_13|GPIO_PIN_14
-                          |GPIO_PIN_12|GPIO_PIN_15|GPIO_PIN_11;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
+  /* GPIOF configuration */
+  gpio_init_structure.Pin   = GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2  | GPIO_PIN_3  | GPIO_PIN_4  |
+                              GPIO_PIN_5  | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
+                              GPIO_PIN_15;
 
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOF, &gpio_init_structure);
 
-  /* GPIO_InitStruct */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
+  /* GPIOG configuration */
+  gpio_init_structure.Pin   = GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2   | GPIO_PIN_4 |
+                              GPIO_PIN_5  | GPIO_PIN_8  | GPIO_PIN_15;
+  HAL_GPIO_Init(GPIOG, &gpio_init_structure);
 
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  /* GPIOH configuration */
+  gpio_init_structure.Pin   = GPIO_PIN_2  | GPIO_PIN_3  | GPIO_PIN_5  | GPIO_PIN_8  | GPIO_PIN_9  |
+                              GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
+                              GPIO_PIN_15;
+  HAL_GPIO_Init(GPIOH, &gpio_init_structure);
 
-  /* GPIO_InitStruct */
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF12_FMC;
+  /* GPIOI configuration */
+  gpio_init_structure.Pin   = GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2  | GPIO_PIN_3  | GPIO_PIN_4  |
+                              GPIO_PIN_5  | GPIO_PIN_6  | GPIO_PIN_7  | GPIO_PIN_9  | GPIO_PIN_10;
+  HAL_GPIO_Init(GPIOI, &gpio_init_structure);
 
-  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+#if 0
+  /* Configure common DMA parameters */
+  dma_handle.Init.Channel             = SDRAM_DMAx_CHANNEL;
+  dma_handle.Init.Direction           = DMA_MEMORY_TO_MEMORY;
+  dma_handle.Init.PeriphInc           = DMA_PINC_ENABLE;
+  dma_handle.Init.MemInc              = DMA_MINC_ENABLE;
+  dma_handle.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
+  dma_handle.Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
+  dma_handle.Init.Mode                = DMA_NORMAL;
+  dma_handle.Init.Priority            = DMA_PRIORITY_HIGH;
+  dma_handle.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+  dma_handle.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
+  dma_handle.Init.MemBurst            = DMA_MBURST_SINGLE;
+  dma_handle.Init.PeriphBurst         = DMA_PBURST_SINGLE;
+
+  dma_handle.Instance = SDRAM_DMAx_STREAM;
+
+   /* Associate the DMA handle */
+  __HAL_LINKDMA(hsdram, hdma, dma_handle);
+
+  /* Deinitialize the stream for new transfer */
+  HAL_DMA_DeInit(&dma_handle);
+
+  /* Configure the DMA stream */
+  HAL_DMA_Init(&dma_handle);
+
+  /* NVIC configuration for DMA transfer complete interrupt */
+  HAL_NVIC_SetPriority(SDRAM_DMAx_IRQn, 0x0F, 0);
+  HAL_NVIC_EnableIRQ(SDRAM_DMAx_IRQn);
+#endif
 }
 
 /**
@@ -458,69 +581,41 @@ __weak void BSP_SDRAM_MspInit(SDRAM_HandleTypeDef  *hsdram, void *Params)
   */
 __weak void BSP_SDRAM_MspDeInit(SDRAM_HandleTypeDef  *hsdram, void *Params)
 {
+#if 0
+  static DMA_HandleTypeDef dma_handle;
+
+  /* Disable NVIC configuration for DMA interrupt */
+  HAL_NVIC_DisableIRQ(SDRAM_DMAx_IRQn);
+
+  /* Deinitialize the stream for new transfer */
+  dma_handle.Instance = SDRAM_DMAx_STREAM;
+  HAL_DMA_DeInit(&dma_handle);
+#endif
+
   /* Peripheral clock enable */
   __HAL_RCC_FMC_CLK_DISABLE();
 
-  /** FMC GPIO Configuration
-  PE1   ------> FMC_NBL1
-  PE0   ------> FMC_NBL0
-  PG15   ------> FMC_SDNCAS
-  PD0   ------> FMC_D2
-  PD1   ------> FMC_D3
-  PG8   ------> FMC_SDCLK
-  PF2   ------> FMC_A2
-  PF1   ------> FMC_A1
-  PF0   ------> FMC_A0
-  PG5   ------> FMC_BA1
-  PF3   ------> FMC_A3
-  PG4   ------> FMC_BA0
-  PG2   ------> FMC_A12
-  PF5   ------> FMC_A5
-  PF4   ------> FMC_A4
-  PC2   ------> FMC_SDNE0
-  PC3   ------> FMC_SDCKE0
-  PE10   ------> FMC_D7
-  PH5   ------> FMC_SDNWE
-  PF13   ------> FMC_A7
-  PF14   ------> FMC_A8
-  PE9   ------> FMC_D6
-  PE11   ------> FMC_D8
-  PD15   ------> FMC_D1
-  PD14   ------> FMC_D0
-  PF12   ------> FMC_A6
-  PF15   ------> FMC_A9
-  PE12   ------> FMC_D9
-  PE15   ------> FMC_D12
-  PF11   ------> FMC_SDNRAS
-  PG0   ------> FMC_A10
-  PE8   ------> FMC_D5
-  PE13   ------> FMC_D10
-  PD10   ------> FMC_D15
-  PD9   ------> FMC_D14
-  PG1   ------> FMC_A11
-  PE7   ------> FMC_D4
-  PE14   ------> FMC_D11
-  PD8   ------> FMC_D13
-  */
 
-  HAL_GPIO_DeInit(GPIOE, GPIO_PIN_1|GPIO_PIN_0|GPIO_PIN_10|GPIO_PIN_9
-                          |GPIO_PIN_11|GPIO_PIN_12|GPIO_PIN_15|GPIO_PIN_8
-                          |GPIO_PIN_13|GPIO_PIN_7|GPIO_PIN_14);
+  HAL_GPIO_DeInit(GPIOD, GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_8  | GPIO_PIN_9  | GPIO_PIN_10 |
+                         GPIO_PIN_14 | GPIO_PIN_15);
 
-  HAL_GPIO_DeInit(GPIOG, GPIO_PIN_15|GPIO_PIN_8|GPIO_PIN_5|GPIO_PIN_4
-                          |GPIO_PIN_2|GPIO_PIN_0|GPIO_PIN_1);
+  HAL_GPIO_DeInit(GPIOE, GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_7  | GPIO_PIN_8  | GPIO_PIN_9  |
+                         GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
+                         GPIO_PIN_15);
 
-  HAL_GPIO_DeInit(GPIOD, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_15|GPIO_PIN_14
-                          |GPIO_PIN_10|GPIO_PIN_9|GPIO_PIN_8);
+  HAL_GPIO_DeInit(GPIOF, GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2  | GPIO_PIN_3  | GPIO_PIN_4  |
+                         GPIO_PIN_5  | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
+                         GPIO_PIN_15);
 
-  HAL_GPIO_DeInit(GPIOF, GPIO_PIN_2|GPIO_PIN_1|GPIO_PIN_0|GPIO_PIN_3
-                          |GPIO_PIN_5|GPIO_PIN_4|GPIO_PIN_13|GPIO_PIN_14
-                          |GPIO_PIN_12|GPIO_PIN_15|GPIO_PIN_11);
+  HAL_GPIO_DeInit(GPIOG, GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2  | GPIO_PIN_4  |
+                         GPIO_PIN_5  | GPIO_PIN_8  | GPIO_PIN_15);
 
-  HAL_GPIO_DeInit(GPIOC, GPIO_PIN_2|GPIO_PIN_3);
+  HAL_GPIO_DeInit(GPIOH, GPIO_PIN_2  | GPIO_PIN_3  | GPIO_PIN_5  | GPIO_PIN_8  | GPIO_PIN_9  |
+                         GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_13 | GPIO_PIN_14 |
+                         GPIO_PIN_15);
 
-  HAL_GPIO_DeInit(GPIOH, GPIO_PIN_5);
-
+  HAL_GPIO_DeInit(GPIOI, GPIO_PIN_0  | GPIO_PIN_1  | GPIO_PIN_2  | GPIO_PIN_3  | GPIO_PIN_4  |
+                         GPIO_PIN_5  | GPIO_PIN_6  | GPIO_PIN_7  | GPIO_PIN_9  | GPIO_PIN_10);
 }
 
 

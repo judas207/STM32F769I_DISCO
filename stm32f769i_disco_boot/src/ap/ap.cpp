@@ -39,9 +39,9 @@ void apInit(void)
 
   // RTC Backup Registers 의 RTC_BKP_DR4 가 set일때 부트모드
   // user 버튼이 눌린 상태로 전원 ON시 부트모드
-  // reset 버튼 2번 연속 눌렸을경우 부트모드
+  // reset 버튼 2번 연속 눌렸을경우 부트모드(사용안함)
   //
-  if (boot_param & RESET_MODE_RUN_BOOT || buttonGetPressed(_DEF_BUTTON1) == true || resetGetCount() == 2)
+  if (boot_param & RESET_MODE_RUN_BOOT || buttonGetPressed(_DEF_BUTTON1) == true)// || resetGetCount() == 2)
   {
     boot_mode = BOOT_MODE_LOADER;
     logPrintf("boot begin...\r\n");

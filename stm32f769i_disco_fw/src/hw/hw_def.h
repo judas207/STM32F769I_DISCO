@@ -25,7 +25,6 @@
 #define _USE_HW_FATFS
 #define _USE_HW_QSPI
 #define _USE_HW_FLASH
-//#define _USE_HW_SDRAM
 
 #define _USE_HW_RTC
 #define      HW_RTC_CFG_DATA_1      RTC_BKP_DR1
@@ -66,8 +65,8 @@
 #define _HW_DEF_RTC_RESET_SRC       RTC_BKP_DR5
 
 #define _USE_HW_SDRAM
-#define      HW_SDRAM_MEM_ADDR      0x0C0000000
-#define      HW_SDRAM_MEM_SIZE      (16*1024*1024)
+#define      HW_SDRAM_MEM_ADDR      0xC0000000
+#define      HW_SDRAM_MEM_SIZE      (16*1024*1024)  /* SDRAM device size in MBytes */
 
 
 #define _DEF_UART_CLI               _DEF_UART1
