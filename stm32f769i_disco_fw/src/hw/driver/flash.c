@@ -391,7 +391,7 @@ void cliFlash(cli_args_t *args)
     cliPrintf( "flash info\n");
     cliPrintf( "flash read  [addr] [length]\n");
     cliPrintf( "flash erase [addr] [length]\n");
-    cliPrintf( "flash write [addr] [data]\n");
+    cliPrintf( "flash write [addr] [data(HEX)]\n");
   }
 
 }

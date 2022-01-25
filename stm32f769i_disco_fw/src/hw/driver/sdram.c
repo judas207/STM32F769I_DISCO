@@ -20,9 +20,8 @@
 #define SDRAM_OK         ((uint8_t)0x00)
 #define SDRAM_ERROR      ((uint8_t)0x01)
 
-#define SDRAM_DEVICE_ADDR  SDRAM_MEM_ADDR
-#define SDRAM_DEVICE_SIZE  SDRAM_MEM_SIZE
-
+#define SDRAM_DEVICE_ADDR  0xC0000000
+#define SDRAM_DEVICE_SIZE  (16*1024*1024)  /* SDRAM device size in MBytes */
 
 
 
@@ -148,7 +147,7 @@ bool sdramTest(void)
 #define SDCLOCK_PERIOD                   FMC_SDRAM_CLOCK_PERIOD_2
 /* #define SDCLOCK_PERIOD                   FMC_SDRAM_CLOCK_PERIOD_3 */
 
-#define REFRESH_COUNT                    ((uint32_t)0x0603)   /* SDRAM refresh counter (100Mhz SD clock) */
+#define REFRESH_COUNT                    1834//((uint32_t)0x0603)   /* SDRAM refresh counter (100Mhz SD clock) */
 
 #define SDRAM_TIMEOUT                    ((uint32_t)0xFFFF)
 
@@ -229,6 +228,9 @@ uint8_t BSP_SDRAM_Init(void)
 
   /* SDRAM initialization sequence */
   BSP_SDRAM_Initialization_sequence(REFRESH_COUNT);
+
+  //Deactivate speculative/cache access to first FMC Bank to save FMC bandwidth
+  FMC_Bank1->BTCR[0] = 0x000030D2;
 
   return sdramstatus;
 }

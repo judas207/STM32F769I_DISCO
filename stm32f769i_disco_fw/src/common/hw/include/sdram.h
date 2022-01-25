@@ -19,9 +19,6 @@
 #ifdef _USE_HW_SDRAM
 
 
-#define SDRAM_MEM_ADDR    HW_SDRAM_MEM_ADDR
-#define SDRAM_MEM_SIZE    HW_SDRAM_MEM_SIZE
-
 
 bool sdramInit(void);
 bool sdramIsInit(void);
