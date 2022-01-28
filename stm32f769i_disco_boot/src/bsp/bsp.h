@@ -28,6 +28,7 @@ extern "C" {
 #endif
 #endif
 
+void logPrintf(const char *fmt, ...);
 
 
 bool bspInit(void);

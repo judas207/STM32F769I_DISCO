@@ -28,7 +28,7 @@ void apInit(void)
 #endif
 
 
-  cliOpen(_DEF_UART_CLI, 115200);
+  cliOpen(_DEF_UART_LOG_CLI, 115200);
   cliAdd("boot", cliBoot);
 
 }

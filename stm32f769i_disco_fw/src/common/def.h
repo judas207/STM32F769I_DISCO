@@ -31,7 +31,7 @@
 
 #define _DEF_UART1            0  // UART6
 #define _DEF_UART2            1  // USB_CDC
-#define _DEF_UART3            2
+#define _DEF_UART3            2  // UART1 (ST-LINK)
 #define _DEF_UART4            3
 
 #define _DEF_BUTTON1          0  // USER

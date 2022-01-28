@@ -48,11 +48,13 @@ bool hwInit(void)
   gpioInit();
   usbInit();
   uartInit();
-  uartOpen(_DEF_UART_CLI, 115200);  // UART6
-  uartOpen(_DEF_UART_CDC, 115200);  // USB_CDC
+  uartOpen(_DEF_UART_HW,      115200);
+  uartOpen(_DEF_UART_LOG_CLI, 115200);
+  uartOpen(_DEF_UART_CDC,     115200);
 
-  logOpen(_DEF_UART1, 115200);
-  logPrintf("\r\n[ Firmware Begin... ]\r\n");
+  logOpen(_DEF_UART_LOG_CLI, 115200);
+  logPrintf("\r\n");
+  logPrintf("[ Firmware Begin... ]\r\n");
   logPrintf("Booting..Name \t\t: %s\r\n", firm_ver.name);
   logPrintf("Booting..Ver  \t\t: %s\r\n", firm_ver.version);
   logPrintf("Sys Clk       \t\t: %d Mhz\r\n", HAL_RCC_GetSysClockFreq()/1000000);
@@ -68,10 +70,8 @@ bool hwInit(void)
   fatfsInit();
 
 
-
   logBoot(false);
 
-  //cliOpen(_DEF_UART_CLI, 115200);
 
   return true;
 }

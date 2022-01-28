@@ -8,7 +8,7 @@
 
 /*
  *
- * USART6 (_DEF_UART1) 으로 printf 사용
+ * _DEF_UART_LOG_CLI 으로 printf 사용
  *
  */
 
@@ -70,7 +70,7 @@ uint32_t millis(void)
 
 int __io_putchar(int ch)
 {
-  uartWrite(_DEF_UART1, (uint8_t *)&ch, 1);
+  uartWrite(_DEF_UART_LOG_CLI, (uint8_t *)&ch, 1);
 
   return 1;
 }

@@ -8,7 +8,7 @@
 
 /*
  *
- * USART6 (_DEF_UART1) 으로 printf 사용
+ * _DEF_UART_LOG_CLI 으로 printf 사용
  *
  */
 
@@ -60,7 +60,18 @@ bool bspDeInit(void)
 
 void delay(uint32_t time_ms)
 {
+#ifdef _USE_HW_RTOS
+  if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
+  {
+    osDelay(time_ms);
+  }
+  else
+  {
+    HAL_Delay(time_ms);
+  }
+#else
   HAL_Delay(time_ms);
+#endif
 }
 
 uint32_t millis(void)
@@ -70,7 +81,7 @@ uint32_t millis(void)
 
 int __io_putchar(int ch)
 {
-  uartWrite(_DEF_UART1, (uint8_t *)&ch, 1);
+  uartWrite(_DEF_UART_LOG_CLI, (uint8_t *)&ch, 1);
 
   return 1;
 }
@@ -126,9 +137,11 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 #if 0
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USART6
-                              |RCC_PERIPHCLK_SDMMC2|RCC_PERIPHCLK_CLK48;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC|RCC_PERIPHCLK_USART1
+                              |RCC_PERIPHCLK_USART6|RCC_PERIPHCLK_SDMMC2
+                              |RCC_PERIPHCLK_CLK48;
   PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+  PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_PCLK2;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
   PeriphClkInitStruct.Sdmmc2ClockSelection = RCC_SDMMC2CLKSOURCE_CLK48;

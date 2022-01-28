@@ -37,7 +37,7 @@
 #define      HW_LED_MAX_CH          2
 
 #define _USE_HW_UART
-#define      HW_UART_MAX_CH         2
+#define      HW_UART_MAX_CH         3
 
 #define _USE_HW_LOG
 #define      HW_LOG_CH              _DEF_UART1
@@ -67,10 +67,10 @@
 
 
 
-#define _DEF_UART_CLI               _DEF_UART1
+#define _DEF_UART_LOG_CLI           _DEF_UART3
 #define _DEF_UART_CDC               _DEF_UART2
-#define _DEF_UART_ESP_BOOT          _DEF_UART3
-#define _DEF_UART_ESP_UART          _DEF_UART4
+#define _DEF_UART_HW                _DEF_UART1
+//#define _DEF_UART_ESP_UART          _DEF_UART4
 
 #define _DEF_BUTTON_USER            _DEF_BUTTON1
 

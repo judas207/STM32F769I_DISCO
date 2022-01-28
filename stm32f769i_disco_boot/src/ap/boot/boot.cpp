@@ -88,6 +88,7 @@ bool bootVerifyCrc(void)
     }
     else
     {
+      logPrintf("CRC MagicNumber Fail\n");
       return false;
     }
   }

@@ -15,6 +15,10 @@
  *
  * _DEF_UART2
  *      USB CDC
+ *
+ * _DEF_UART3
+ *      USART1
+ *
  */
 
 
@@ -59,9 +63,11 @@ uart_tbl_t uart_tbl[UART_MAX_CH];
 
 
 
-
+UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart6;
+DMA_HandleTypeDef hdma_usart1_rx;
 DMA_HandleTypeDef hdma_usart6_rx;
+
 
 
 bool uartInit(void)
@@ -104,9 +110,9 @@ bool uartOpen(uint8_t ch, uint32_t baud)
       }
       if (ch == _DEF_UART3)
       {
-        //uart_tbl[ch].p_huart   = &huart3;
-        //uart_tbl[ch].p_hdma_rx = &hdma_usart3_rx;
-        //uart_tbl[ch].p_huart->Instance    = USART3;
+        uart_tbl[ch].p_huart   = &huart1;
+        uart_tbl[ch].p_hdma_rx = &hdma_usart1_rx;
+        uart_tbl[ch].p_huart->Instance    = USART1;
       }
       if (ch == _DEF_UART4)
       {
@@ -152,7 +158,11 @@ bool uartOpen(uint8_t ch, uint32_t baud)
     case _DEF_UART2:
       uart_tbl[ch].type    = UART_HW_TYPE_USB;
       uart_tbl[ch].baud    = baud;
-      uart_tbl[ch].is_open = true;
+
+      if (cdcIsInit() == true)
+      {
+        uart_tbl[ch].is_open = true;
+      }
       ret = true;
       break;
   }
@@ -176,7 +186,6 @@ uint32_t uartAvailable(uint8_t ch)
   switch(ch)
   {
     case _DEF_UART1:
-      //ret = qbufferAvailable();
     case _DEF_UART3:
     case _DEF_UART4:
       uart_tbl[ch].qbuffer.in = (uart_tbl[ch].qbuffer.len - ((DMA_Stream_TypeDef *)uart_tbl[ch].p_hdma_rx->Instance)->NDTR);
@@ -235,6 +244,8 @@ uint32_t uartWrite(uint8_t ch, uint8_t *p_data, uint32_t length)
   switch(ch)
   {
     case _DEF_UART1:
+    case _DEF_UART3:
+    case _DEF_UART4:
       if (HAL_UART_Transmit(uart_tbl[ch].p_huart, p_data, length, 100) == HAL_OK)
       {
         ret = length;
@@ -312,15 +323,59 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
 
-  if(uartHandle->Instance==USART6)
+
+  if(uartHandle->Instance==USART1)
   {
-  /* USER CODE BEGIN USART6_MspInit 0 */
     __HAL_RCC_DMA2_CLK_ENABLE();
-  /* USER CODE END USART6_MspInit 0 */
 
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART1;
+    PeriphClkInitStruct.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+    {
+      Error_Handler();
+    }
 
-  /** Initializes the peripherals clock
-  */
+    __HAL_RCC_USART1_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    /**USART1 GPIO Configuration
+    PA10     ------> USART1_RX
+    PA9      ------> USART1_TX
+    */
+    GPIO_InitStruct.Pin       = GPIO_PIN_10|GPIO_PIN_9;
+    GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull      = GPIO_NOPULL;
+    GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    /* USART1 DMA Init */
+    /* USART1_RX Init */
+    hdma_usart1_rx.Instance                 = DMA2_Stream2;
+    hdma_usart1_rx.Init.Channel             = DMA_CHANNEL_4;
+    hdma_usart1_rx.Init.Direction           = DMA_PERIPH_TO_MEMORY;
+    hdma_usart1_rx.Init.PeriphInc           = DMA_PINC_DISABLE;
+    hdma_usart1_rx.Init.MemInc              = DMA_MINC_ENABLE;
+    hdma_usart1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
+    hdma_usart1_rx.Init.MemDataAlignment    = DMA_MDATAALIGN_BYTE;
+    hdma_usart1_rx.Init.Mode                = DMA_NORMAL;
+    hdma_usart1_rx.Init.Priority            = DMA_PRIORITY_LOW;
+    hdma_usart1_rx.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
+    if (HAL_DMA_Init(&hdma_usart1_rx) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(uartHandle,hdmarx,hdma_usart1_rx);
+
+    /* DMA2_Stream2_IRQn interrupt configuration */
+    HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
+  }
+  else if(uartHandle->Instance==USART6)
+  {
+    __HAL_RCC_DMA2_CLK_ENABLE();
+
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART6;
     PeriphClkInitStruct.Usart6ClockSelection = RCC_USART6CLKSOURCE_PCLK2;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
@@ -328,10 +383,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
       Error_Handler();
     }
 
-    /* USART6 clock enable */
     __HAL_RCC_USART6_CLK_ENABLE();
-
     __HAL_RCC_GPIOC_CLK_ENABLE();
+
     /**USART6 GPIO Configuration
     PC7     ------> USART6_RX
     PC6     ------> USART6_TX
@@ -362,36 +416,31 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
 
     __HAL_LINKDMA(uartHandle,hdmarx,hdma_usart6_rx);
 
-  /* USER CODE BEGIN USART6_MspInit 1 */
     /* DMA2_Stream1_IRQn interrupt configuration */
     HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
-  /* USER CODE END USART6_MspInit 1 */
   }
 }
 
 void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 {
-
-  if(uartHandle->Instance==USART6)
+  if(uartHandle->Instance==USART1)
   {
-  /* USER CODE BEGIN USART6_MspDeInit 0 */
+    __HAL_RCC_USART1_CLK_DISABLE();
 
-  /* USER CODE END USART6_MspDeInit 0 */
-    /* Peripheral clock disable */
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_10|GPIO_PIN_9);
+
+    /* USART1 DMA DeInit */
+    HAL_DMA_DeInit(uartHandle->hdmarx);
+  }
+  else if(uartHandle->Instance==USART6)
+  {
     __HAL_RCC_USART6_CLK_DISABLE();
 
-    /**USART6 GPIO Configuration
-    PC7     ------> USART6_RX
-    PC6     ------> USART6_TX
-    */
     HAL_GPIO_DeInit(GPIOC, GPIO_PIN_7|GPIO_PIN_6);
 
     /* USART6 DMA DeInit */
     HAL_DMA_DeInit(uartHandle->hdmarx);
-  /* USER CODE BEGIN USART6_MspDeInit 1 */
-
-  /* USER CODE END USART6_MspDeInit 1 */
   }
 }
 

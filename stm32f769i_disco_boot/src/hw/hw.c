@@ -27,10 +27,11 @@ bool hwInit(void)
   //gpioInit();
   //usbInit();
   uartInit();
-  uartOpen(_DEF_UART1, 115200);  // UART6
-  uartOpen(_DEF_UART2, 115200);  // USB_CDC
+  //uartOpen(_DEF_UART_STLINK,  115200);
+  uartOpen(_DEF_UART_LOG_CLI, 115200);
+  uartOpen(_DEF_UART_CDC,     115200);
 
-  logOpen(_DEF_UART1, 115200);
+  logOpen(_DEF_UART_LOG_CLI, 115200);
   logPrintf("\r\n[ Bootloader Begin... ]\r\n");
   logPrintf("Booting..Name \t\t: %s\r\n", boot_ver.name);
   logPrintf("Booting..Ver  \t\t: %s\r\n", boot_ver.version);
