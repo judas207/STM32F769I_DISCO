@@ -824,7 +824,7 @@ __weak void BSP_QSPI_MspInit(QSPI_HandleTypeDef *hqspi, void *Params)
     gpio_init_structure.Alternate = QSPI_CS_PIN_AF;
     gpio_init_structure.Mode      = GPIO_MODE_AF_PP;
     gpio_init_structure.Pull      = GPIO_PULLUP;
-    gpio_init_structure.Speed     = GPIO_SPEED_FREQ_HIGH;
+    gpio_init_structure.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
     HAL_GPIO_Init(QSPI_CS_GPIO_PORT, &gpio_init_structure);
     /* QSPI CLK GPIO pin configuration  */
     gpio_init_structure.Pin       = QSPI_CLK_PIN;
