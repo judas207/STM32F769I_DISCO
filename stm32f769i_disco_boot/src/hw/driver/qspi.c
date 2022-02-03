@@ -16,20 +16,6 @@
 
 
 
-/* QSPI Error codes */
-#define QSPI_OK            ((uint8_t)0x00)
-#define QSPI_ERROR         ((uint8_t)0x01)
-#define QSPI_BUSY          ((uint8_t)0x02)
-#define QSPI_NOT_SUPPORTED ((uint8_t)0x04)
-#define QSPI_SUSPENDED     ((uint8_t)0x08)
-
-
-
-/* QSPI Base Address */
-#define QSPI_BASE_ADDRESS          0x90000000
-
-
-
 static bool is_init = false;
 
 uint8_t BSP_QSPI_Init       (void);
@@ -328,8 +314,8 @@ uint8_t BSP_QSPI_Init(void)
   BSP_QSPI_MspInit(&QSPIHandle, NULL);
 
   /* QSPI initialization */
-  /* QSPI freq = SYSCLK /(1 + ClockPrescaler) = 216 MHz/(1+1) = 108 Mhz */
-  QSPIHandle.Init.ClockPrescaler     = 1;   /* QSPI freq = 216 MHz/(1+1) = 108 Mhz */
+  /* QSPI freq = SYSCLK /(1 + ClockPrescaler) = 200 MHz/(1+1) = 100 Mhz */
+  QSPIHandle.Init.ClockPrescaler     = 1;   /* QSPI freq = 200 MHz/(1+1) = 100 Mhz */
   QSPIHandle.Init.FifoThreshold      = 16;
   QSPIHandle.Init.SampleShifting     = QSPI_SAMPLE_SHIFTING_HALFCYCLE;
   QSPIHandle.Init.FlashSize          = POSITION_VAL(MX25L512_FLASH_SIZE) - 1;  // 25
@@ -825,7 +811,7 @@ __weak void BSP_QSPI_MspInit(QSPI_HandleTypeDef *hqspi, void *Params)
     gpio_init_structure.Alternate = QSPI_CS_PIN_AF;
     gpio_init_structure.Mode      = GPIO_MODE_AF_PP;
     gpio_init_structure.Pull      = GPIO_PULLUP;
-    gpio_init_structure.Speed     = GPIO_SPEED_FREQ_HIGH;
+    gpio_init_structure.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
     HAL_GPIO_Init(QSPI_CS_GPIO_PORT, &gpio_init_structure);
     /* QSPI CLK GPIO pin configuration  */
     gpio_init_structure.Pin       = QSPI_CLK_PIN;

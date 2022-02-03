@@ -118,6 +118,7 @@ bool flashErase(uint32_t addr, uint32_t length)
   }
 #endif
 
+
   for (banks = 0; banks < FLASH_MAX_BANK; banks++)
   {
     start_sector = -1;
@@ -292,8 +293,6 @@ bool flashRead(uint32_t addr, uint8_t *p_data, uint32_t length)
 
 
 
-
-
 #ifdef _USE_HW_CLI
 void cliFlash(cli_args_t *args)
 {
@@ -304,14 +303,18 @@ void cliFlash(cli_args_t *args)
   uint8_t  data;
   uint32_t pre_time;
   bool flash_ret;
+  const flash_tbl_t *flash_tbl;
 
+  flash_tbl = flash_tbl_bank1;
 
   if (args->argc == 1)
   {
     if(args->isStr(0, "info") == true)
     {
-      cliPrintf("flash addr  : 0x%X\n", 0x8000000);
-      cliPrintf("qspi  addr  : 0x%X\n", 0x90000000);
+      cliPrintf("flash addr  : 0x%X\n", flash_tbl[0].addr);
+#ifdef _USE_HW_QSPI
+      cliPrintf("qspi  addr  : 0x%X\n", QSPI_BASE_ADDRESS);
+#endif
     }
     else
     {

@@ -18,6 +18,19 @@
 #ifdef _USE_HW_QSPI
 
 
+
+/* QSPI Error codes */
+#define QSPI_OK            ((uint8_t)0x00)
+#define QSPI_ERROR         ((uint8_t)0x01)
+#define QSPI_BUSY          ((uint8_t)0x02)
+#define QSPI_NOT_SUPPORTED ((uint8_t)0x04)
+#define QSPI_SUSPENDED     ((uint8_t)0x08)
+
+
+/* QSPI Base Address */
+#define QSPI_BASE_ADDRESS          0x90000000
+
+
 /* QSPI Info */
 typedef struct {
  uint32_t FlashSize;          /*!< Size of the flash */

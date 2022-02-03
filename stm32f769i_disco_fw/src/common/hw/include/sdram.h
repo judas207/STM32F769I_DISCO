@@ -20,6 +20,13 @@
 
 
 
+#define SDRAM_OK         ((uint8_t)0x00)
+#define SDRAM_ERROR      ((uint8_t)0x01)
+
+#define SDRAM_DEVICE_ADDR  0xC0000000
+#define SDRAM_DEVICE_SIZE  (16*1024*1024)  /* SDRAM device size in MBytes */
+
+
 bool sdramInit(void);
 bool sdramIsInit(void);
 bool sdramTest(void);

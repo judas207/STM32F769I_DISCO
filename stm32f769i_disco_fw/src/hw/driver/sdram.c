@@ -17,13 +17,6 @@
 #ifdef _USE_HW_SDRAM
 
 
-#define SDRAM_OK         ((uint8_t)0x00)
-#define SDRAM_ERROR      ((uint8_t)0x01)
-
-#define SDRAM_DEVICE_ADDR  0xC0000000
-#define SDRAM_DEVICE_SIZE  (16*1024*1024)  /* SDRAM device size in MBytes */
-
-
 
 uint8_t BSP_SDRAM_Init(void);
 uint8_t BSP_SDRAM_DeInit(void);
