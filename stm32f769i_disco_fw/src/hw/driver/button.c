@@ -18,13 +18,14 @@ typedef struct
 {
   GPIO_TypeDef  *port;
   uint32_t       pin;
+  uint32_t       mode;
   GPIO_PinState  on_state;
 } button_tbl_t;
 
 
 button_tbl_t button_tbl[BUTTON_MAX_CH] =
     {
-        {GPIOA, GPIO_PIN_0, GPIO_PIN_SET},  // 0 : user
+        {GPIOA, GPIO_PIN_0, _DEF_INPUT, GPIO_PIN_SET},  // 0 : user
     };
 
 
@@ -37,24 +38,59 @@ bool buttonInit(void)
 {
   bool ret = true;
 
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
 
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-
   for (int i=0; i<BUTTON_MAX_CH; i++)
   {
-    GPIO_InitStruct.Pin = button_tbl[i].pin;
-    HAL_GPIO_Init(button_tbl[i].port, &GPIO_InitStruct);
+    buttonPinMode(i, button_tbl[i].mode);
   }
 
 #ifdef _USE_HW_CLI
   cliAdd("button", cliButton);
 #endif
+
+  return ret;
+}
+
+bool buttonPinMode(uint8_t ch, uint32_t mode)
+{
+  bool ret = false;
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+
+  switch(mode)
+  {
+    case _DEF_INPUT:
+      GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      break;
+    case _DEF_INPUT_PULLUP:
+      GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+      GPIO_InitStruct.Pull = GPIO_PULLUP;
+      break;
+    case _DEF_INPUT_PULLDOWN:
+      GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+      GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+      break;
+    case _DEF_OUTPUT:
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_NOPULL;
+      break;
+    case _DEF_OUTPUT_PULLUP:
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_PULLUP;
+      break;
+    case _DEF_OUTPUT_PULLDOWN:
+      GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+      GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+      break;
+
+  }
+
+  GPIO_InitStruct.Pin = button_tbl[ch].pin;
+  HAL_GPIO_Init(button_tbl[ch].port, &GPIO_InitStruct);
 
   return ret;
 }

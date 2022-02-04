@@ -19,7 +19,8 @@ typedef struct
 {
   GPIO_TypeDef   *port;
   uint32_t        pin;
-  uint8_t         mode;
+  uint32_t        mode;
+  uint32_t        speed;
   GPIO_PinState   on_state;
   GPIO_PinState   off_state;
   bool            init_value;
@@ -28,7 +29,7 @@ typedef struct
 
 const gpio_tbl_t gpio_tbl[GPIO_MAX_CH] =
     {
-        {GPIOI, GPIO_PIN_15, _DEF_INPUT_PULLUP, GPIO_PIN_RESET, GPIO_PIN_SET,   _DEF_HIGH},    // 0. uSD_Detect
+        {GPIOI, GPIO_PIN_15, _DEF_INPUT_PULLUP, GPIO_SPEED_HIGH, GPIO_PIN_RESET, GPIO_PIN_SET,   _DEF_HIGH},    // 0. uSD_Detect
     };
 
 #ifdef _USE_HW_CLI
@@ -55,7 +56,7 @@ bool gpioInit(void)
   return ret;
 }
 
-bool gpioPinMode(uint8_t ch, uint8_t mode)
+bool gpioPinMode(uint8_t ch, uint32_t mode)
 {
   bool ret = false;
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -90,7 +91,8 @@ bool gpioPinMode(uint8_t ch, uint8_t mode)
 
   }
 
-  GPIO_InitStruct.Pin = gpio_tbl[ch].pin;
+  GPIO_InitStruct.Pin   = gpio_tbl[ch].pin;
+  GPIO_InitStruct.Speed = gpio_tbl[ch].speed;
   HAL_GPIO_Init(gpio_tbl[ch].port, &GPIO_InitStruct);
 
   return ret;

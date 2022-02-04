@@ -33,6 +33,7 @@ typedef struct
 
 
 bool buttonInit(void);
+bool buttonPinMode(uint8_t ch, uint32_t mode);
 bool buttonGetPressed(uint8_t ch);
 
 void buttonObjCreate(button_obj_t *p_obj, uint8_t ch, uint32_t repeat_time);
