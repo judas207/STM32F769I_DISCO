@@ -71,6 +71,14 @@ bool sdInit(void)
         ret = true;
         logPrintf("sdCardInit  \t\t: OK\r\n");
       }
+      else
+      {
+        logPrintf("sdCardBusWide4B  \t\t: Fail\r\n");
+      }
+    }
+    else
+    {
+      logPrintf("sdCardInit  \t\t: Fail\r\n");
     }
   }
   else

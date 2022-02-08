@@ -45,9 +45,11 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Memories definition */
 MEMORY
 {
-  RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 512K
-  TAG    (rx)     : ORIGIN = 0x08020000,   LENGTH = 1K
-  FLASH  (rx)     : ORIGIN = 0x08020400,   LENGTH = 1919K  /*2048-128(boot)-1(tag)*/
+  RAM     (xrw)    : ORIGIN = 0x20000000,   LENGTH = 512K
+  TAG     (rx)     : ORIGIN = 0x08020000,   LENGTH = 1K
+  FLASH   (rx)     : ORIGIN = 0x08020400,   LENGTH = 1919K  /*2048-128(boot)-1(tag)*/
+  
+  QUADSPI (rx)     : ORIGIN = 0x90000000,   LENGTH = 64M
 }
 
 /* Sections */
@@ -198,6 +200,14 @@ SECTIONS
     libm.a ( * )
     libgcc.a ( * )
   }
+
+  .ex_qflash_tag :
+  {
+    . = ALIGN(4);      
+    KEEP(*(.ex_qflash_tag))
+    KEEP(*(.ex_qflash_tag*))   
+    . = ALIGN(4);       
+  } >QUADSPI 
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }

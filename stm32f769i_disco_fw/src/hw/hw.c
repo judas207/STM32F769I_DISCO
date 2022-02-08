@@ -72,6 +72,7 @@ bool hwInit(void)
 
   logBoot(false);
 
+  //qspiEnableMemoryMappedMode();
 
   return true;
 }

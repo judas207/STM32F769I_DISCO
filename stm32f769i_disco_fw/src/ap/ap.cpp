@@ -16,6 +16,9 @@
 void cliBoot(cli_args_t *args);
 
 
+__attribute__((section(".ex_qflash_tag"))) const char ex_qflash_str[256] = "This is test";
+
+
 void apInit(void)
 {
 #if 0
@@ -61,6 +64,22 @@ void apMain(void)
 #endif
 
     cliMain();
+
+
+    sd_state_t sd_state;
+
+    sd_state = sdUpdate();
+    if (sd_state == SDCARD_CONNECTED)
+    {
+      logPrintf("\nSDCARD_CONNECTED\n");
+      //threadNotify(EVENT_SDCARD_CONNECTED);
+    }
+    if (sd_state == SDCARD_DISCONNECTED)
+    {
+      logPrintf("\nSDCARD_DISCONNECTED\n");
+      //threadNotify(EVENT_SDCARD_DISCONNECTED);
+    }
+    //delay(1);
   }
 }
 
