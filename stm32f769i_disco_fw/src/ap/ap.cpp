@@ -10,10 +10,12 @@
 
 
 #include "ap.h"
+#include "thread/thread.h"
 
+//void cliThread(void const *argument);
 
+static void cliBoot(cli_args_t *args);
 
-void cliBoot(cli_args_t *args);
 
 
 __attribute__((section(".ex_qflash_tag"))) const char ex_qflash_str[256] = "This is test";
@@ -31,8 +33,25 @@ void apInit(void)
 #endif
 
 
-  cliOpen(_DEF_UART_LOG_CLI, 115200);
+  //cliOpen(_DEF_UART_LOG_CLI, 115200);
+#if 0
+  osThreadDef(cliThread, cliThread, _HW_DEF_RTOS_THREAD_PRI_CLI, 0, _HW_DEF_RTOS_THREAD_MEM_CLI);
+  if (osThreadCreate(osThread(cliThread), NULL) != NULL)
+  {
+    //ret = true;
+    logPrintf("cliThread \t\t: OK\r\n");
+  }
+  else
+  {
+    logPrintf("cliThread \t\t: Fail\r\n");
+  }
+#endif
   cliAdd("boot", cliBoot);
+  //cliAdd("info", cliInfo);
+
+
+  threadInit();
+
 
 }
 
@@ -63,23 +82,21 @@ void apMain(void)
     }
 #endif
 
-    cliMain();
-
 
     sd_state_t sd_state;
 
     sd_state = sdUpdate();
     if (sd_state == SDCARD_CONNECTED)
     {
-      logPrintf("\nSDCARD_CONNECTED\n");
-      //threadNotify(EVENT_SDCARD_CONNECTED);
+      //logPrintf("\nSDCARD_CONNECTED\n");
+      threadNotify(EVENT_SDCARD_CONNECTED);
     }
     if (sd_state == SDCARD_DISCONNECTED)
     {
-      logPrintf("\nSDCARD_DISCONNECTED\n");
-      //threadNotify(EVENT_SDCARD_DISCONNECTED);
+      //logPrintf("\nSDCARD_DISCONNECTED\n");
+      threadNotify(EVENT_SDCARD_DISCONNECTED);
     }
-    //delay(1);
+    delay(10);
   }
 }
 
@@ -123,3 +140,4 @@ void cliBoot(cli_args_t *args)
     cliPrintf("boot jump_fw\n");
   }
 }
+

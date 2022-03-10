@@ -37,6 +37,8 @@ bool bspInit(void)
   SCB_EnableICache();
   SCB_EnableDCache();
 
+  rtosInit();
+
   return true;
 }
 

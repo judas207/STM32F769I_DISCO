@@ -21,11 +21,33 @@
 #define _DEF_FIRMWATRE_VERSION    "V20211202_R1"
 #define _DEF_BOARD_NAME           "STM32F769I-Disco"
 
+
+
+#define _HW_DEF_RTOS_MEM_SIZE(x)              ((x)/4)
+
+
+#define _HW_DEF_RTOS_THREAD_PRI_MAIN          osPriorityNormal
+#define _HW_DEF_RTOS_THREAD_PRI_CLI           osPriorityNormal
+//#define _HW_DEF_RTOS_THREAD_PRI_LED           osPriorityNormal
+#define _HW_DEF_RTOS_THREAD_PRI_LCD           osPriorityNormal
+#define _HW_DEF_RTOS_THREAD_PRI_EVENT         osPriorityNormal
+#define _HW_DEF_RTOS_THREAD_PRI_INFO          osPriorityNormal
+
+#define _HW_DEF_RTOS_THREAD_MEM_MAIN          _HW_DEF_RTOS_MEM_SIZE( 2*1024)
+#define _HW_DEF_RTOS_THREAD_MEM_CLI           _HW_DEF_RTOS_MEM_SIZE( 6*1024)
+//#define _HW_DEF_RTOS_THREAD_MEM_LED           _HW_DEF_RTOS_MEM_SIZE(    256)
+#define _HW_DEF_RTOS_THREAD_MEM_LCD           _HW_DEF_RTOS_MEM_SIZE( 6*1024)
+#define _HW_DEF_RTOS_THREAD_MEM_EVENT         _HW_DEF_RTOS_MEM_SIZE( 2*1024)
+#define _HW_DEF_RTOS_THREAD_MEM_INFO          _HW_DEF_RTOS_MEM_SIZE(    512)
+
+
+
 #define _USE_HW_SD
 #define _USE_HW_FATFS
 #define _USE_HW_QSPI
 #define _USE_HW_FLASH
 #define _USE_HW_SDRAM
+#define _USE_HW_RTOS
 
 #define _USE_HW_RTC
 #define      HW_RTC_CFG_DATA_1      RTC_BKP_DR1

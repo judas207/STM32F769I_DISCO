@@ -23,6 +23,7 @@
 #include "quadspi.h"
 #include "rtc.h"
 #include "sdmmc.h"
+#include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
 #include "gpio.h"
@@ -110,6 +111,7 @@ int main(void)
   MX_RTC_Init();
   MX_FMC_Init();
   MX_USART1_UART_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
